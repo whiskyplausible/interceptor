@@ -1,8 +1,4 @@
 # 1007
-# OK this is looking much more healthy - menus actually make sense rather than the bizarre shit that was happening before
-# So just need to make long press on middle button go back to start of menus. Just set time to measure press and release, and if it is more
-# than certain amount, bail back to the main menu
-# Generate the menus by loops, not arrays.. maybe?
 
 # Improvements - show which patches actually have content in, also maybe confirm overwriting a patch when saving
 
@@ -40,7 +36,6 @@ Up to CC#30
 
 The reason for asking the program to pause restoring and saving until it has 'settled' on the command sent is because I will be selecting this patch with a stepped potentiometer on my Beatstep Pro. The Beatstep has a 3 digit LCD so I can program it to also show number between 1 and 99. So I can quickly rotate the knob until i see the right number, then stop turning. Obviously when turned the pot will blast a load of CC patch commands at the Pi.
 """
-## Oh. Hai!
 ## Need to check the ways that other controllers can interfere with the load/save proces.
 ## Fire off thread to see if a message should be sent after x time
 
