@@ -5,7 +5,7 @@
 To get to load Interceptor at boot, there's obviously loads of ways. For now I have been using this method:
 
 1. Do ```sudo raspi-config  ``` and enabe auto login to command prompt.
-2. Do ```crontab -e``` (doesn't need sudo), and on the last line add ```@reboot python3 /home/pi/interceptor-103.py```
+2. Do ```crontab -e``` (doesn't need sudo), and on the last line add ```@reboot python3 /home/pi/interceptor.py```
 
 This seems to work for now.
 
