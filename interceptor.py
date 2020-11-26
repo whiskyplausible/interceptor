@@ -328,7 +328,11 @@ def handler(ch, event):
                     current_menu = 8
                     current_menu_option = 0
                 if current_menu_option == 2: #uhoh update time
-                    update_version()
+                    try:
+                        update_version()
+                    except:
+                        modal("Update failed...", False)
+                        return
                     current_menu = 10
                     modal("Rebooting...", False)
                     system("sudo reboot")
@@ -405,12 +409,8 @@ def backlight_on():
     backlight.show()
     
 def update_version():
-    try:
-        response = requests.get("https://raw.githubusercontent.com/whiskyplausible/interceptor/main/interceptor.py")
-        response.raise_for_status() # ensure we notice bad responses
-    except:
-        modal("Download failed", False)
-        return
+    response = requests.get("https://raw.githubusercontent.com/whiskyplausible/interceptor/main/interceptor.py")
+    response.raise_for_status() # ensure we notice bad responses
 
     file = open("interceptor.py", "r")
     bakfile = open("interceptor.py.bak", "w")
@@ -421,7 +421,6 @@ def update_version():
     file = open("interceptor.py", "w")
     file.write(response.text)
     file.close()
-
 
 def cleanup():
     backlight.set_all(0, 0, 0)
