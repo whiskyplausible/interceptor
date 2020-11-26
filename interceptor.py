@@ -93,7 +93,7 @@ screen_interaction = False
 last_button_press = 0
 offset_top = 0
 last_press_time = 0
-VERSION = 1001
+VERSION = 1002
 PATCH_RESET = False
 
 class MenuOption:
