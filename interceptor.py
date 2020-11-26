@@ -51,6 +51,7 @@ import threading
 import sys
 import atexit
 from os import path
+from os import system
 import traceback
 import mido
 import requests
@@ -92,7 +93,8 @@ screen_interaction = False
 last_button_press = 0
 offset_top = 0
 last_press_time = 0
-VERSION = 1000
+VERSION = 1001
+PATCH_RESET = False
 
 class MenuOption:
     def __init__(self, name, action, options=()):
@@ -128,25 +130,32 @@ def save_patch_menu(patch_no):
     global current_channel
     save_patch(current_channel, patch_no)
 
-menu_options = [None, None, None, None, None, None, None, None, None]
+menu_options = [None, None, None, None, None, None, None, None, None, None, None]
 
 menu_options[1] = [
     [ 'Set MIDI in port',1],
     [ 'Set MIDI out port',2],
     [ 'Install latest version', 3],
-    [ 'Version ' + str(VERSION), 4]
+    [ 'Reboot', 4],
+    [ 'Use reset patch', 5],
+    [ 'Version ' + str(VERSION), 6]
     ]
 
-menu_options[7] = [["Prev menu", 1]]
+menu_options[7] = [["<Back", 1]]
 
 for num, name in enumerate(mido.get_input_names(), start=1):
     menu_options[7].append([name, num+1])
 
-menu_options[8] = [["Prev menu", 1]]
+menu_options[8] = [["<Back", 1]]
 
 for num, name in enumerate(mido.get_output_names(), start=1):
     menu_options[8].append([name, num+1])
 
+menu_options[9] = [
+    ["<Back",0],
+    ["Reset patch on", 1],
+    ["Reset patch off", 2]
+]
 
 menu_options[0] = [
     ['Load patch', 'load_patch',''],
@@ -165,30 +174,25 @@ menu_options[2] = [
     ['Channel 8', 8],
     ['Channel 9', 9],
     ['Channel 10', 10],
-    ['Channel 10', 10],
-    ['Channel 10', 10],
-    ['Channel 10', 10],
-    ['Channel 10', 10],
-    ['Channel 10', 10],
-    ['Channel 10', 10],
+    ['Channel 11', 11],
+    ['Channel 12', 12],
+    ['Channel 13', 13],
+    ['Channel 14', 14],
+    ['Channel 15', 15],
     ]
 
 menu_options[3] = menu_options[2]
 
 menu_options[5] = [
-    ['Patch 1', 1],
-    ['Patch 2', 2],
-    ['Patch 3', 3],
-    ['Patch 4', 4],
-    ['Patch 5', 5],
-    ['Patch 6', 6],
-    ['Patch 7', 7],
-    ['Patch 8', 8],
-    ['Patch 9', 9],
-    ['Patch 10', 10],
-]
+    ['Patch Reset', 1]
+    ]
+
+for loop in range(98):
+    menu_options[5].append(["Patch "+str(loop+1), loop+2])
 
 menu_options[6] = menu_options[5]
+
+menu_options[10] = []
 
 current_milli_time = lambda: int(round(time.time() * 1000))
 
@@ -198,9 +202,11 @@ def set_port(port_type, port_name):
         inport = mido.open_input(port_name)
     if port_type == "OUTPUT":
         outport = mido.open_output(port_name)
+
     config = {
             "midiInput":  inport.name,
-            "midiOutput": outport.name
+            "midiOutput": outport.name,
+            "resetPatch": PATCH_RESET
         }
     with open("interceptor.cfg", 'wb') as f:
         pickle.dump(config, f)
@@ -216,6 +222,18 @@ def save_patch(channel, patch_no):
         if value > -1:
             print("saving: control num:", index, "value: ", value)
 
+def save_reset_patch(reset_value):
+    global PATCH_RESET
+    config = {
+            "midiInput":  inport.name,
+            "midiOutput": outport.name,
+            "resetPatch": reset_value
+        }
+    with open("interceptor.cfg", 'wb') as f:
+        pickle.dump(config, f)
+    PATCH_RESET = reset_value
+    print("config saved: ", config)
+
 def load_patch(channel, patch_no):
     filename = str(channel).zfill(2) + str(patch_no).zfill(2)
 
@@ -228,6 +246,13 @@ def load_patch(channel, patch_no):
     file = open(filename, 'rb')
     patch = pickle.load(file)
     file.close()
+
+    if PATCH_RESET and patch_no != 0:
+        load_patch(channel, 0)
+        print("RESet patch on SO RESETTINGS")
+    else:
+        print("patch reset off so not resetting")
+
     for index, value in enumerate(patch):
         if value > -1:
             msg = mido.Message('control_change', channel=channel - 1, control=index, value=value)
@@ -302,6 +327,15 @@ def handler(ch, event):
                 if current_menu_option == 1: # input options
                     current_menu = 8
                     current_menu_option = 0
+                if current_menu_option == 2: #uhoh update time
+                    update_version()
+                if current_menu_option == 3:
+                    current_menu = 10
+                    modal("Rebooting...", False)
+                    system("sudo reboot")
+                if current_menu_option == 4:
+                    current_menu = 9
+                    current_menu_option = 0
             elif current_menu == 7: # set input port menu
                 if current_menu_option == 0:
                     current_menu = 1
@@ -317,6 +351,19 @@ def handler(ch, event):
                 else:                
                     print("saving output port")
                     set_port("OUTPUT", menu_options[8][current_menu_option][0])
+                    modal("Saved", False)
+                    current_menu = 1
+                    current_menu_option = 0
+            elif current_menu == 9: # reset patch menu
+                if current_menu_option == 0:
+                    current_menu = 1
+                if current_menu_option == 1:
+                    save_reset_patch(True)
+                    modal("Saved", False)
+                    current_menu = 1
+                    current_menu_option = 0
+                if current_menu_option == 2:
+                    save_reset_patch(False)
                     modal("Saved", False)
                     current_menu = 1
                     current_menu_option = 0
@@ -355,14 +402,23 @@ def backlight_on():
     backlight.show()
     
 def update_version():
-    response = requests.get("https://pdftables.com/api?&format=xlsx-single",files=files)
-    response.raise_for_status() # ensure we notice bad responses
-    file = open("resp_text.txt", "w")
+    try:
+        response = requests.get("https://raw.githubusercontent.com/whiskyplausible/interceptor/main/interceptor.py")
+        response.raise_for_status() # ensure we notice bad responses
+    except:
+        modal("Download failed", False)
+        return
+
+    file = open("interceptor.py", "r")
+    bakfile = open("interceptor.py.bak", "w")
+    bakfile.write(file.read())
+    file.close()
+    bakfile.close()
+
+    file = open("interceptor.py", "w")
     file.write(response.text)
     file.close()
-    file = open("resp_content.txt", "w")
-    file.write(response.text)
-    file.close()
+
 
 def cleanup():
     backlight.set_all(0, 0, 0)
@@ -371,8 +427,9 @@ def cleanup():
     lcd.show()
 
 def modal(message, blocking):
+    global modal_wait, last_press_time
+    last_press_time = current_milli_time()	
     backlight_on()
-    global modal_wait
     text = message.split("\n")
     image.paste(0, (0, 0, width, height))
     draw.text((0,0), text[0], 1, font)
@@ -461,7 +518,7 @@ draw_menu()
 
 inport = mido.open_input(mido.get_output_names()[0])
 outport = mido.open_output(mido.get_input_names()[0])
-
+modal("Interceptor\nv"+str(VERSION), False)
 if not path.exists("interceptor.cfg"):
     modal("No settings saved\nPlease set up MIDI\nports in Settings.", True)
     # in_names = mido.get_input_names()
@@ -495,6 +552,10 @@ else:
     config = pickle.load(file)
     file.close()
     print(config)
+    try:
+        PATCH_RESET = config["resetPatch"]
+    except:
+        modal("Error loading\nconfig\n", True)
     try:
         inport = mido.open_input(config["midiInput"])
         outport = mido.open_output(config["midiOutput"])

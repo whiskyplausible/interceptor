@@ -33,6 +33,7 @@ sudo apt-get install libtiff5 -y
 pip3 install pillow
 pip3 install python-rtmidi
 pip3 install mido
+pip3 install requests
 sudo apt-get install python3-smbus
 sudo pip3 install spidev
 sudo apt-get install libopenjp2-7
