@@ -1,4 +1,4 @@
-# 1004
+# 1005
 # OK this is looking much more healthy - menus actually make sense rather than the bizarre shit that was happening before
 # So just need to make long press on middle button go back to start of menus. Just set time to measure press and release, and if it is more
 # than certain amount, bail back to the main menu
@@ -94,7 +94,7 @@ screen_interaction = False
 last_button_press = 0
 offset_top = 0
 last_press_time = 0
-VERSION = 1004
+VERSION = 1005
 PATCH_RESET = False
 
 class MenuOption:
@@ -418,7 +418,7 @@ def update_version():
     bakfile.write(file.read())
     file.close()
     bakfile.close()
-
+    print(response.text[0:10])
     file = open("interceptor.py", "w")
     file.write(response.text)
     file.close()
