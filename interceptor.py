@@ -329,6 +329,9 @@ def handler(ch, event):
                     current_menu_option = 0
                 if current_menu_option == 2: #uhoh update time
                     update_version()
+                    current_menu = 10
+                    modal("Rebooting...", False)
+                    system("sudo reboot")
                 if current_menu_option == 3:
                     current_menu = 10
                     modal("Rebooting...", False)
