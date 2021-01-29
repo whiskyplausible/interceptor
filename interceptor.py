@@ -89,7 +89,7 @@ screen_interaction = False
 last_button_press = 0
 offset_top = 0
 last_press_time = 0
-VERSION = 1007
+VERSION = 1008
 PATCH_RESET = False
 
 class MenuOption:
@@ -251,6 +251,7 @@ def load_patch(channel, patch_no):
 
     for index, value in enumerate(patch):
         if value > -1:
+            sent_ccs[channel][index] = value
             msg = mido.Message('control_change', channel=channel - 1, control=index, value=value)
             outport.send(msg)
             print("loading: ", msg)
